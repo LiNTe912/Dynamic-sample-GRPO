@@ -1,0 +1,5 @@
+{"time":"2025-06-26T20:18:54.611108669+08:00","level":"INFO","msg":"main: starting server","port-filename":"/tmp/tmpavpb2jtq/port-1161976.txt","pid":1161976,"log-level":0,"disable-analytics":false,"shutdown-on-parent-exit":false,"enable-dcgm-profiling":false}
+{"time":"2025-06-26T20:18:54.616026225+08:00","level":"INFO","msg":"Will exit if parent process dies.","ppid":1161976}
+{"time":"2025-06-26T20:18:54.616305225+08:00","level":"INFO","msg":"server is running","addr":{"IP":"127.0.0.1","Port":42917,"Zone":""}}
+{"time":"2025-06-26T20:18:54.637844523+08:00","level":"INFO","msg":"connection: ManageConnectionData: new connection created","id":"127.0.0.1:46208"}
+{"time":"2025-06-26T20:18:54.686039949+08:00","level":"INFO","msg":"handleInformInit: received","streamId":"qqnd1q0y","id":"127.0.0.1:46208"}
