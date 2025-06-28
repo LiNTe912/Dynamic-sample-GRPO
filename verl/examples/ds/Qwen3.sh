@@ -8,7 +8,7 @@ export VLLM_USE_V1=1
 DATE=$(date +%m%d)
 TIME_TAG=$(date +%H%M%S)
 
-TASK="DS-GRPO"
+TASK="GRPO"
 BACKBONE="Qwen3-4B"
 ADVANTAGE="grpo"
 
@@ -23,16 +23,16 @@ MICRO_BATCH_SIZE=2
 
 DATA_LOCAL_DIR="data/nq_open"
 BACKBONE_PATH="/dev_data/wy/zwt/qwen3-4b"
-REWARD_FUNCTION_PATH="/dev_data/wy/zwt/verl/verl/utils/reward_score/ds.py"
+REWARD_FUNCTION_PATH="/dev_data/wy/zwt/verl/verl/utils/reward_score/normal.py"
 
 MODEL="${TASK}-${BACKBONE}"
 DATASET="nq-open"
-EXPERIMENT="DS-GRPO"
+EXPERIMENT="GRPO"
 
-WANDB_PROJECT="DS-verl"
+WANDB_PROJECT="verl"
 LOG_NAME="${DATE}-${EXPERIMENT}-${MODEL}-${ADVANTAGE}"
-OUTPUT_DIR="checkpoints/${MODEL}_${DATASET}"
-COUNT_FILE="count/${MODEL}_${DATASET}_count.json"
+OUTPUT_DIR="checkpoints/${MODEL}_${DATASET}_${TASK}"
+COUNT_FILE="count/${MODEL}_${DATASET}_${TASK}_count.json"
 
 # ------------------------------------------------------------
 python -m verl.trainer.main_ppo \
