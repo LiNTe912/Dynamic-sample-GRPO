@@ -23,6 +23,7 @@ MICRO_BATCH_SIZE=2
 
 DATA_LOCAL_DIR="data/nq_open"
 BACKBONE_PATH="/dev_data/wy/zwt/qwen3-4b"
+REWARD_FUNCTION_PATH="/dev_data/wy/zwt/verl/verl/utils/reward_score/ds.py"
 
 MODEL="${TASK}-${BACKBONE}"
 DATASET="nq-open"
@@ -30,14 +31,14 @@ EXPERIMENT="DS-GRPO"
 
 WANDB_PROJECT="DS-verl"
 LOG_NAME="${DATE}-${EXPERIMENT}-${MODEL}-${ADVANTAGE}"
-OUTPUT_DIR="checkpoints/${WANDB_PROJECT}/${MODEL}/${DATE}/${EXPERIMENT}-${ADVANTAGE}-${TIME_TAG}"
+OUTPUT_DIR="checkpoints/${MODEL}_${DATASET}"
 COUNT_FILE="count/${MODEL}_${DATASET}_count.json"
 
 # ------------------------------------------------------------
 python -m verl.trainer.main_ppo \
   reward_model.reward_manager=batch \
   +reward_model.reward_kwargs.count_file=$COUNT_FILE \
-  custom_reward_function.path=/dev_data/wy/zwt/verl/verl/utils/reward_score/ds.py \
+  custom_reward_function.path=$REWARD_FUNCTION_PATH \
   data.train_files=$DATA_LOCAL_DIR/train.parquet \
   data.val_files=$DATA_LOCAL_DIR/test.parquet \
   data.max_prompt_length=$MAX_PROMPT_LENGTH \
@@ -87,9 +88,7 @@ python -m verl.trainer.main_ppo \
   trainer.n_gpus_per_node=1 \
   trainer.nnodes=1 \
   trainer.test_freq=1000 \
-  trainer.save_freq=20 \
-  trainer.total_epochs=10 \
-  trainer.total_training_steps=100 \
+  trainer.save_freq=500 \
   trainer.resume_mode=auto \
   trainer.default_local_dir=$OUTPUT_DIR \
   trainer.total_epochs=3

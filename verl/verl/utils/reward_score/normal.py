@@ -1,32 +1,7 @@
-import json
-
-def load_data_from_file(filename='count.json'):
-    default_data = {
-        'correct_count': 0,
-        'incorrect_count': 1,
-        'threshold': 0.3,
-        'total_count': 1
-    }
-
-    try:
-        with open(filename, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # 文件不存在时创建文件并写入默认内容
-        with open(filename, 'w') as f:
-            json.dump(default_data, f, indent=4)
-        return default_data
-
-def save_data_to_file(data, filename='count.json'):
-    with open(filename, 'w') as f:
-        json.dump(data, f)
-
-
 def extract_xml_answer(text: str) -> str:
     answer = text.split("<answer>")[-1]
     answer = answer.split("</answer>")[0]
     return answer.strip()
-
 
 def parse_model_output(output: str) -> str:
     # 去掉空格和换行符，并将其转换为小写进行统一处理
@@ -54,7 +29,6 @@ def compute_score(data_sources, solution_strs, ground_truths, extra_infos, **rew
     filename = reward_kwargs['count_file']
     batch_size = reward_kwargs['batch_size']
     n_response = int(len(solution_strs) / batch_size)
-    data = load_data_from_file(filename)
 
 
     scores = []
@@ -63,7 +37,6 @@ def compute_score(data_sources, solution_strs, ground_truths, extra_infos, **rew
     assert total % (batch_size * n_response) == 0, "Total size must be divisible by batch_size * n_response"
 
     for b in range(batch_size):
-        has_knowledge = False
         batch_scores = []
 
         for i in range(n_response):
@@ -78,25 +51,11 @@ def compute_score(data_sources, solution_strs, ground_truths, extra_infos, **rew
             if "unknown" in output_words:
                 batch_scores.append(0)
             elif is_ground_truth_covered(gt_list, output_words):
-                has_knowledge = True
                 batch_scores.append(1.0)
             else:
                 batch_scores.append(-1.0)
 
-
-        # apply correction if model consistently unsure and error rate is high
-        if (data["incorrect_count"]) / (data["correct_count"] + data["incorrect_count"]) > data["threshold"] and not has_knowledge:
-            batch_scores = [0] * n_response
-        else:
-            if has_knowledge:
-                data["correct_count"] += 1
-            else:
-                data["incorrect_count"] += 1
-            data["total_count"] += 1
-
         scores.extend(batch_scores)
-
-    save_data_to_file(data, filename)
 
     print(f"\nFinal Scores:\n{scores}")
     return scores
