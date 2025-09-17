@@ -32,25 +32,24 @@ Respond in the following format:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--local_dir", default="data/nq_open")
+    parser.add_argument("--local_dir", default="data/webquestions")
     parser.add_argument("--hdfs_dir", default=None)
 
     args = parser.parse_args()
 
-    data_source = "data/nq_open/NQ-open.efficientqa.test.1.1.jsonl"
+    data_source = "/home/zwt/Dev/webquestions/trainmodel.json"
     # data_source = "data/nq_open/NQ-open.train.jsonl"
     dataset = datasets.load_dataset("json", data_files=data_source)
-    train_dataset = dataset[list(dataset.keys())[0]]# .select(range(10000))
+    train_dataset = dataset[list(dataset.keys())[0]].select(range(2834))
 
     # add a row to each data item that represents a unique id
     def make_map_fn(split):
         def process_fn(example, idx):
-            question = example.pop("question")
-            prompt = question
-            answer = example.pop("answer")
+            question = example.pop("qText")
+            answer = example.pop("answers")
             answer = ", ".join(answer)
 
-            prompt = "Answer the following question based on your internal knowledge. The length for reasoning should be less than 500 words, and the answer between <answer> and </answer> should be one or few words. If you are not sure, you can answer \"Unknown\". Question: " + prompt
+            prompt = "Answer the following question with one or few words. If you do not know the answer, answer 'Unknown'. Question: " + question
             
             data = {
                 "data_source": "NQ-open",
@@ -76,10 +75,10 @@ if __name__ == "__main__":
 
         return process_fn
 
-    train_dataset = train_dataset.map(function=make_map_fn("test"), with_indices=True, num_proc=8)
+    train_dataset = train_dataset.map(function=make_map_fn("train"), with_indices=True, num_proc=8)
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
 
-    train_dataset.to_parquet(os.path.join(local_dir, "test.parquet"))
+    train_dataset.to_parquet(os.path.join(local_dir, "train_first10k.parquet"))
 
