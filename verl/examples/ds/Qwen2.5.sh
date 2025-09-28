@@ -9,20 +9,20 @@ DATE=$(date +%m%d)
 TIME_TAG=$(date +%H%M%S)
 
 TASK="DS-GRPO"
-BACKBONE="qwen2.5-7b"
+BACKBONE="qwen2.5-14b"
 ADVANTAGE="grpo"
 
 MAX_PROMPT_LENGTH=512
 MAX_RESPONSE_LENGTH=1024
 
 EPISODE=80
-DATA_TRAIN_BATCH_SIZE=8
+DATA_TRAIN_BATCH_SIZE=32
 N_SAMPLES_PER_PROMPT=8
-MINI_BATCH_SIZE=4
-MICRO_BATCH_SIZE=2
+MINI_BATCH_SIZE=16
+MICRO_BATCH_SIZE=8
 
 DATA_LOCAL_DIR="data/webquestions"
-BACKBONE_PATH="/data2/wentao/qwen2.5-7b"
+BACKBONE_PATH="/data2/wentao/qwen2.5-14b". # path to your model
 
 MODEL="${TASK}-${BACKBONE}"
 DATASET="webquestions"
@@ -30,7 +30,7 @@ EXPERIMENT="DS-GRPO"
 
 WANDB_PROJECT="DS-verl"
 LOG_NAME="${DATE}-${EXPERIMENT}-${MODEL}-${ADVANTAGE}"
-OUTPUT_DIR="/data2/zwt/verl/checkpoints/${MODEL}_${DATASET}"
+OUTPUT_DIR="/data2/zwt/verl/checkpoints/${MODEL}_${DATASET}" # path to save the output
 COUNT_FILE="count/${MODEL}_${DATASET}_count.json"
 
 # ------------------------------------------------------------
@@ -39,7 +39,7 @@ python -m verl.trainer.main_ppo \
   +reward_model.reward_kwargs.count_file=$COUNT_FILE \
   +reward_model.reward_kwargs.batch_size=$DATA_TRAIN_BATCH_SIZE \
   +reward_model.reward_kwargs.n_samples=$N_SAMPLES_PER_PROMPT \
-  custom_reward_function.path=/home/zwt/Dev/verl/verl/utils/reward_score/ds.py\
+  custom_reward_function.path=verl/utils/reward_score/ds.py \
   data.train_files=$DATA_LOCAL_DIR/train_first10k.parquet \
   data.val_files=$DATA_LOCAL_DIR/train_first10k.parquet \
   data.max_prompt_length=$MAX_PROMPT_LENGTH \
@@ -73,8 +73,8 @@ python -m verl.trainer.main_ppo \
   actor_rollout_ref.rollout.dtype=bfloat16 \
   actor_rollout_ref.rollout.free_cache_engine=True \
   actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=$MICRO_BATCH_SIZE \
-  actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
-  actor_rollout_ref.rollout.gpu_memory_utilization=0.8 \
+  actor_rollout_ref.rollout.tensor_model_parallel_size=4 \
+  actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
   actor_rollout_ref.rollout.n=$N_SAMPLES_PER_PROMPT \
   actor_rollout_ref.rollout.max_model_len=$((MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH)) \
   actor_rollout_ref.rollout.max_num_batched_tokens=$((MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH)) \
@@ -92,7 +92,7 @@ python -m verl.trainer.main_ppo \
   trainer.val_before_train=False \
   trainer.project_name=$WANDB_PROJECT \
   trainer.experiment_name=$LOG_NAME \
-  trainer.n_gpus_per_node=4 \
+  trainer.n_gpus_per_node=8 \
   trainer.nnodes=1 \
   trainer.test_freq=-1\
   trainer.save_freq=2000 \

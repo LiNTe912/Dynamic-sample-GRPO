@@ -11,7 +11,7 @@ import ast
 # 设置随机种子保证可重复性
 random.seed(42)
 
-def load_custom_dataset(file_path="/home/zwt/Dev/hotpotQA/test.json", max_line=2000, starting_point=1) -> Dataset:
+def load_custom_dataset(file_path="../data/hotpotQA/test.json", max_line=2000, starting_point=1) -> Dataset:
     data = []
     i = 0
     with open(file_path, "r", encoding="utf-8") as f:
