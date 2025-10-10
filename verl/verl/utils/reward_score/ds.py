@@ -61,11 +61,12 @@ def parse_model_output(output: str) -> str:
     if cleaned_output == "unknown":
         return "unknown"  # 如果是 Unknown，就返回 "Unknown"
     else:
-        return output  # 如果不是 "Unknown"，返回原始输出
+        return cleaned_output  # 如果不是 "Unknown"，返回原始输出
 
 from nltk.corpus import stopwords
 
 STOPWORDS = set(stopwords.words("english"))
+STOPWORDS -= {"yes", "no", "not", "true", "false"}
 
 def is_ground_truth_covered(ground_truth: list, output_words: set) -> bool: 
     # 去除停用词
