@@ -49,8 +49,16 @@ if __name__ == "__main__":
             answer = example.pop("answer")
             # answer = ", ".join(answer)
 
-            prompt = "Answer the following question with one or few words. If you do not know the answer, answer 'Unknown'. Question: " + question
-            
+            # prompt = "Answer the following question with one or few words. If you do not know the answer, answer 'Unknown'. Question: " + question
+            prompt = (
+                "Answer the following question with one or few words. "
+                "If you do not know the answer, answer 'Unknown'. "
+                "Also, provide a confidence score (0% to 100%, in steps of 10%) representing how confident you are in your answer. "
+                "Respond strictly in JSON format as: "
+                "{\"answer\": \"<your answer>\", \"confidence\": \"<confidence>%\"} "
+                "Question: " + question
+            )
+
             data = {
                 "data_source": "trivia",
                 "prompt": [

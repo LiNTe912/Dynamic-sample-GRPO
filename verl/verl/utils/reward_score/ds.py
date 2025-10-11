@@ -1,7 +1,6 @@
 import json
 import re
-from collections import defaultdict
-
+from collections import defaultdict,Counter
 def sortQA(questions, answers):
     # 1. 配对：打包成 (question, answer, original_index) 三元组
     paired = list(zip(questions, answers, range(len(questions))))
@@ -53,15 +52,19 @@ def extract_xml_answer(text: str) -> str:
 
 
 def parse_model_output(output: str) -> str:
+    output = json.loads(output)
+    output = output.get("answer", "").strip()
+    confidence = output.get("confidence", 0).strip()
+    confidence = int(confidence.replace('%', '')) if confidence else 0
     # 去掉空格和换行符，并将其转换为小写进行统一处理
     cleaned_output = re.sub(r'[^a-zA-Z0-9 ]', '', output)
     cleaned_output = cleaned_output.strip().lower()
 
     # 判断是否输出了 "Unknown"
     if cleaned_output == "unknown":
-        return "unknown"  # 如果是 Unknown，就返回 "Unknown"
+        return ["unknown", confidence]  # 如果是 Unknown，就返回 "Unknown"
     else:
-        return output  # 如果不是 "Unknown"，返回原始输出
+        return [output, confidence]  # 如果不是 "Unknown"，返回原始输出
 
 from nltk.corpus import stopwords
 
@@ -125,13 +128,20 @@ def compute_score(data_sources, solution_strs, ground_truths, extra_infos, **rew
         has_knowledge = 0
         batch_semantic_scores = []
         batch_format_scores = []
-
+        # 处理当前批次
+        batch_response = solution_strs[b * n_response: (b + 1) * n_response]
+        batch_response = [parse_model_output(extract_xml_answer(response))[0] for response in batch_response]
+        # 统计每个答案的出现次数
+        counts = Counter(batch_response)
+        total = len(batch_response)
+        # 按出现频次分配置信分数
+        confidences = [counts[resp] / total for resp in batch_response]
         for i in range(n_response):
             idx = b * n_response + i
             response = solution_strs[idx]
             ground_truth = ground_truths[idx]
 
-            extracted_response = parse_model_output(extract_xml_answer(response))
+            extracted_response, probability = parse_model_output(extract_xml_answer(response))
             extracted_response_list.append(extracted_response)
 
             output_words = set(extracted_response.lower().split())
@@ -147,11 +157,20 @@ def compute_score(data_sources, solution_strs, ground_truths, extra_infos, **rew
             else:
                 batch_semantic_scores.append(-1.0)
 
+            # 计算置信度得分，使用L1惩罚
+            confidence = confidences[i]
+            confidence_score = (probability / 100)  # 转换为0到1
+            confidence_penalty = -abs(confidence - confidence_score)  # L1惩罚
+            batch_semantic_scores[i] += confidence_penalty  # 直接加到语义得分上
             # batch_format_scores.append(0.0)
             # 计算格式得分
-            if all(tag in response for tag in ['<think>', '</think>', '<answer>', '</answer>']):
-            # if len(extracted_response.lower().split()) < 20:
+            pattern = r'^<think>.*?</think><answer>.*?</answer>$'
+            if re.match(pattern, response, re.DOTALL):
+                # 匹配成功
                 batch_format_scores.append(0.0)
+            # if all(tag in response for tag in ['<think>', '</think>', '<answer>', '</answer>']):
+            # # if len(extracted_response.lower().split()) < 20:
+            #     batch_format_scores.append(0.0)
             else:
                 batch_format_scores.append(-1.0)
 
