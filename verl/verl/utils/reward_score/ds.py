@@ -52,23 +52,28 @@ def extract_xml_answer(text: str) -> str:
 
 
 def parse_model_output(output: str) -> str:
-    output = json.loads(output)
-    output = output.get("answer", "").strip()
+    print(f"Raw model output: {output}")
+    try:
+        output = json.loads(output)
+    except json.JSONDecodeError:
+        output = {"answer": "Wrong format", "confidence": "100%"}
+    answer = output.get("answer", "").strip()
     confidence = output.get("confidence", 0).strip()
     confidence = int(confidence.replace('%', '')) if confidence else 0
     # 去掉空格和换行符，并将其转换为小写进行统一处理
-    cleaned_output = re.sub(r'[^a-zA-Z0-9 ]', '', output)
+    cleaned_output = re.sub(r'[^a-zA-Z0-9 ]', '', answer)
     cleaned_output = cleaned_output.strip().lower()
 
     # 判断是否输出了 "Unknown"
     if cleaned_output == "unknown":
         return ["unknown", confidence]  # 如果是 Unknown，就返回 "Unknown"
     else:
-        return [output, confidence]  # 如果不是 "Unknown"，返回原始输出
+        return [cleaned_output, confidence]  # 如果不是 "Unknown"，返回原始输出
 
 from nltk.corpus import stopwords
 
 STOPWORDS = set(stopwords.words("english"))
+STOPWORDS -= {"yes", "no", "not", "true", "false"}
 
 def is_ground_truth_covered(ground_truth: list, output_words: set) -> bool: 
     # 去除停用词
@@ -113,7 +118,6 @@ def compute_score(data_sources, solution_strs, ground_truths, extra_infos, **rew
     data = load_data_from_file(filename)
 
     ground_truths, solution_strs, index_map = sortQA(ground_truths, solution_strs)
-
     extracted_response_list = []
     semantic_scores = []
     format_scores = []
@@ -131,7 +135,7 @@ def compute_score(data_sources, solution_strs, ground_truths, extra_infos, **rew
         # 处理当前批次
         batch_response = solution_strs[b * n_response: (b + 1) * n_response]
         batch_response = [parse_model_output(extract_xml_answer(response))[0] for response in batch_response]
-        # 统计每个答案的出现次数
+        # 统计每个答案的出现次数（语义聚类）
         counts = Counter(batch_response)
         total = len(batch_response)
         # 按出现频次分配置信分数
